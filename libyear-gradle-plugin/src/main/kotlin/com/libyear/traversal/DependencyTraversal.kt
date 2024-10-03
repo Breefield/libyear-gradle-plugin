@@ -6,7 +6,8 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 
 class DependencyTraversal private constructor(
-  private val visitor: DependencyVisitor
+  private val visitor: DependencyVisitor,
+  private val excludedPackages: Set<String>
 ) {
 
   private val seen = mutableSetOf<ComponentIdentifier>()
@@ -23,7 +24,10 @@ class DependencyTraversal private constructor(
       if (!visitor.canContinue()) return
 
       if (dependency is ResolvedDependencyResult) {
-        nextComponents.add(dependency.selected)
+        val selected = dependency.selected
+        if (excludedPackages.none { selected.moduleVersion.toString().contains(it, ignoreCase = true) }) {
+          nextComponents.add(selected)
+        }
       }
     }
 
@@ -37,7 +41,8 @@ class DependencyTraversal private constructor(
 
     fun visit(
       root: ResolvedComponentResult,
-      visitor: DependencyVisitor
-    ): Unit = DependencyTraversal(visitor).visit(root)
+      visitor: DependencyVisitor,
+      excludedPackages: Set<String>
+    ): Unit = DependencyTraversal(visitor, excludedPackages).visit(root)
   }
 }
