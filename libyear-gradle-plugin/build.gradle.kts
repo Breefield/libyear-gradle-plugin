@@ -8,6 +8,7 @@ plugins {
   id("com.gradle.plugin-publish").version("0.21.0")
   id("org.jlleitschuh.gradle.ktlint").version("10.0.0")
   id("pl.allegro.tech.build.axion-release").version("1.10.3")
+  id("org.jetbrains.kotlin.jvm") version "2.0.20"
 }
 
 scmVersion {
