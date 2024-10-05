@@ -6,12 +6,14 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 
 class DependencyTraversal private constructor(
-  private val visitor: DependencyVisitor
+  private val visitor: DependencyVisitor,
+  private val excludedPackages: Set<String>,
+  private val maxTransitiveDepth: Int
 ) {
 
   private val seen = mutableSetOf<ComponentIdentifier>()
 
-  private fun visit(component: ComponentResult) {
+  private fun visit(component: ComponentResult, depth: Int = 0) {
     if (!seen.add(component.id)) return
 
     visitor.visitComponentResult(component)
@@ -23,12 +25,18 @@ class DependencyTraversal private constructor(
       if (!visitor.canContinue()) return
 
       if (dependency is ResolvedDependencyResult) {
-        nextComponents.add(dependency.selected)
+        val selected = dependency.selected
+        if (excludedPackages.none { selected.moduleVersion.toString().contains(it, ignoreCase = true) }) {
+          if (depth > maxTransitiveDepth) {
+            continue
+          }
+          nextComponents.add(selected)
+        }
       }
     }
 
     for (nextComponent in nextComponents) {
-      visit(nextComponent)
+      visit(nextComponent, depth + 1)
       if (!visitor.canContinue()) break
     }
   }
@@ -37,7 +45,9 @@ class DependencyTraversal private constructor(
 
     fun visit(
       root: ResolvedComponentResult,
-      visitor: DependencyVisitor
-    ): Unit = DependencyTraversal(visitor).visit(root)
+      visitor: DependencyVisitor,
+      excludedPackages: Set<String>,
+      maxTransitiveDepth: Int = 0
+    ): Unit = DependencyTraversal(visitor, excludedPackages, maxTransitiveDepth).visit(root, depth = 0)
   }
 }

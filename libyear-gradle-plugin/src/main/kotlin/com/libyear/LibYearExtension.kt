@@ -19,8 +19,12 @@ open class LibYearExtension {
   var failOnError: Boolean = true
 
   var validator: DependencyValidatorSpec = defaultValidator
+  
+  var maxTransitiveDepth: Int = 100
 
   var configurations: List<String> = defaultConfigurations
+
+  var excludedPackages: Set<String> = emptySet()
 
   // DSL for build script authors
 
